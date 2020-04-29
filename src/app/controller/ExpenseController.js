@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { startOfMonth, addMonths, parseISO } from 'date-fns';
+import { startOfMonth, addMonths, parseISO, toDate } from 'date-fns';
 
 import Expense from '../models/Expense';
 import ExpenseDivision from '../models/ExpenseDivision';
@@ -7,7 +7,7 @@ import User from '../models/User';
 import Category from '../models/Category';
 import PaymentForm from '../models/PaymentForm';
 
-class CategoryController {
+class ExpenseController {
   async store(req, res) {
     const schema = Yup.object().shape({
       description: Yup.string().required(),
@@ -77,20 +77,24 @@ class CategoryController {
   }
 
   async index(req, res) {
+    const month = req.query.month
+      ? startOfMonth(parseISO(req.query.month))
+      : startOfMonth(new Date());
     const expenses = await Expense.findAll({
-      where: { month: '2020-08-01' },
+      where: { month },
       include: [
         {
           model: ExpenseDivision,
-          include: [{ model: User, attributes: ['name'] }],
+          as: 'divisions',
+          attributes: ['user_id', 'amount'],
         },
-        { model: User, attributes: ['name'] },
-        { model: Category, attributes: ['name'] },
-        { model: PaymentForm, attributes: ['name'] },
+        { model: User, attributes: ['name', 'display_color'], as: 'user' },
+        { model: Category, attributes: ['name'], as: 'category' },
+        { model: PaymentForm, attributes: ['name'], as: 'paymentform' },
       ],
     });
     return res.json(expenses);
   }
 }
 
-export default new CategoryController();
+export default new ExpenseController();

@@ -17,12 +17,21 @@ class Category extends Model {
   }
 
   static associate(models) {
-    this.hasMany(models.CategoryDivision, { foreignKey: 'category_id' });
+    this.hasMany(models.CategoryDivision, {
+      foreignKey: 'category_id',
+      as: 'division',
+    });
   }
 
   static async findCategory(category_id) {
     const category = await super.findByPk(category_id, {
-      include: [{ model: CategoryDivision, include: [{ model: User }] }],
+      include: [
+        {
+          model: CategoryDivision,
+          as: 'division',
+          include: [{ model: User, attributes: ['id', 'name'] }],
+        },
+      ],
     });
     return category;
   }

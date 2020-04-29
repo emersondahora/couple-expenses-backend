@@ -21,10 +21,19 @@ class Expense extends Model {
   }
 
   static associate(models) {
-    this.hasMany(models.ExpenseDivision, { foreignKey: 'expense_id' });
-    this.belongsTo(models.User, { foreignKey: 'user_id' });
-    this.belongsTo(models.Category, { foreignKey: 'category_id' });
-    this.belongsTo(models.PaymentForm, { foreignKey: 'payment_form_id' });
+    this.hasMany(models.ExpenseDivision, {
+      foreignKey: 'expense_id',
+      as: 'divisions',
+    });
+    this.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });
+    this.belongsTo(models.Category, {
+      foreignKey: 'category_id',
+      as: 'category',
+    });
+    this.belongsTo(models.PaymentForm, {
+      foreignKey: 'payment_form_id',
+      as: 'paymentform',
+    });
     this.belongsTo(models.Expense, {
       foreignKey: 'expense_original',
       as: 'original_expense',

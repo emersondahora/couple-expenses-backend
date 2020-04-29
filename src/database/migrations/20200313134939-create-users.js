@@ -20,6 +20,9 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
+      display_color: {
+        type: Sequelize.STRING,
+      },
       // Timestamps
       created_at: Sequelize.DATE,
       updated_at: Sequelize.DATE,

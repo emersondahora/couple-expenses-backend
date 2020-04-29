@@ -2,6 +2,8 @@ import * as Yup from 'yup';
 
 import Category from '../models/Category';
 import CategoryDivision from '../models/CategoryDivision';
+import Expense from '../models/Expense';
+import User from '../models/User';
 
 class CategoryController {
   async store(req, res) {
@@ -18,11 +20,18 @@ class CategoryController {
       return res.status(400).json({ error: 'Falha na validação' });
     }
     if (
+      req.body.division &&
       req.body.division.reduce(
-        (amount, division) => amount + division.percent,
+        (amount, division) => amount + Number(division.percent),
         0
       ) !== 100
     ) {
+      console.log(
+        req.body.division.reduce(
+          (amount, division) => amount + division.percent,
+          0
+        )
+      );
       return res
         .status(400)
         .json({ error: 'A soma das porcentagens tem que ser igual a 100%' });
@@ -35,14 +44,16 @@ class CategoryController {
       name: req.body.name,
     });
 
-    await Promise.all(
-      req.body.division.map(divisionItem => {
-        return CategoryDivision.create({
-          category_id: category.id,
-          ...divisionItem,
-        });
-      })
-    );
+    if (req.body.division) {
+      await Promise.all(
+        req.body.division.map(divisionItem => {
+          return CategoryDivision.create({
+            category_id: category.id,
+            ...divisionItem,
+          });
+        })
+      );
+    }
 
     return res.json(await Category.findCategory(category.id));
   }
@@ -62,6 +73,7 @@ class CategoryController {
       return res.status(400).json({ error: 'Dados enviados inválidos.' });
     }
     if (
+      req.body.division &&
       req.body.division.reduce(
         (amount, division) => amount + division.percent,
         0
@@ -85,26 +97,57 @@ class CategoryController {
         where: { category_id: req.params.id },
       }).map(division => division.destroy())
     );
-    await Promise.all(
-      req.body.division.map(divisionItem => {
-        return CategoryDivision.create({
-          category_id: category.id,
-          ...divisionItem,
-        });
-      })
-    );
+    if (req.body.division) {
+      await Promise.all(
+        req.body.division.map(divisionItem => {
+          return CategoryDivision.create({
+            category_id: category.id,
+            ...divisionItem,
+          });
+        })
+      );
+    }
 
     return res.json(await Category.findCategory(category.id));
   }
 
   async index(req, res) {
-    const categories = await Category.findAll();
+    const categories = await Category.findAll({
+      include: [
+        {
+          model: CategoryDivision,
+          as: 'division',
+          include: [{ model: User, attributes: ['name', 'id'] }],
+        },
+      ],
+    });
     return res.json(categories);
   }
 
   async show(req, res) {
     const categories = await Category.findCategory(req.params.id);
     return res.json(categories);
+  }
+
+  async delete(req, res) {
+    const category = await Category.findByPk(req.params.id);
+    if (!category) {
+      return res
+        .status(400)
+        .json({ error: 'Forma de pagamento não encontrada.' });
+    }
+    const existsCategoryExpenses = await Expense.count({
+      where: { category_id: category.id },
+      limit: 1,
+    });
+    if (existsCategoryExpenses) {
+      return res.status(400).json({
+        error:
+          'Categoria não pode ser apagada, já possui despesa cadastrada para ela.',
+      });
+    }
+    await category.destroy();
+    return res.status(200).json(existsCategoryExpenses);
   }
 }
 
