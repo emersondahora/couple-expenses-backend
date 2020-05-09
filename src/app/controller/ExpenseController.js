@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { startOfMonth, addMonths, parseISO, toDate } from 'date-fns';
+import { startOfMonth, addMonths, parseISO } from 'date-fns';
 
 import Expense from '../models/Expense';
 import ExpenseDivision from '../models/ExpenseDivision';
@@ -34,8 +34,7 @@ class ExpenseController {
       (amount, division) => amount + division.amount,
       0
     );
-
-    if (amountDivision !== req.body.amount) {
+    if (Number(amountDivision) !== Number(req.body.amount)) {
       return res.status(400).json({
         error: 'A soma da divisão tem que ser igual ao total da despesa',
       });
